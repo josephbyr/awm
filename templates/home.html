@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load leaflet_tags %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_filters %}
+
+{% block head_title %}Home Page{% endblock %}
+
+{% block body_content %}
+    <h3>Advanced Web Mapping</h3>
+    <p>This is a sample application</p>
+    {% if user.is_authenticated %}
+        Hi {{ user.username }}!
+        <p><a href="{% url 'logout' %}">Log out</a></p>
+    {% else %}
+        <p>You are not logged in</p>
+        <p><a href="{% url 'login' %}">Log in</a></p>
+        <p><a href="{% url 'signup' %}">Sign up</a></p>
+    {% endif %}
+{% endblock %}
