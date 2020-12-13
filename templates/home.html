@@ -9,13 +9,14 @@
 {% block head_title %}Home Page{% endblock %}
 
 {% block body_content %}
-    <h3>Advanced Web Mapping</h3>
-    <p>This is a sample application</p>
+    <h3>Welcome</h3>
     {% if user.is_authenticated %}
-        Hi {{ user.username }}!
+        <h4>Hi {{ user.username }}!</h4>
+        <p>To select a route please go to the map page</p>
         <p><a href="{% url 'logout' %}">Log out</a></p>
     {% else %}
-        <p>You are not logged in</p>
+        <p>This app is only available to registered users</p>
+        <p>Please log in or make an account using the sign up button</p>
         <p><a href="{% url 'login' %}">Log in</a></p>
         <p><a href="{% url 'signup' %}">Sign up</a></p>
     {% endif %}

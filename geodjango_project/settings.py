@@ -21,10 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '1n89t0#$5-+^v5ahp@h+&!lc5hu!g79!p(e8vv0jx+1okj+0#c'
-
-# with open('{BASE_DIR}/secret_key.txt') as f:
-#     SECRET_KEY = f.read().strip()
+with open('secret_key.txt') as f:
+    SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -45,6 +43,7 @@ INSTALLED_APPS = [
     'world.apps.WorldConfig',
     'crispy_forms',
     'leaflet',
+    'pwa',
 ]
 
 MIDDLEWARE = [
@@ -142,11 +141,37 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
+PWA_APP_NAME = 'My App'
+PWA_APP_DESCRIPTION = "My app description"
+PWA_APP_THEME_COLOR = '#0A0302'
+PWA_APP_BACKGROUND_COLOR = '#ffffff'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_SCOPE = '/'
+PWA_APP_ORIENTATION = 'any'
+PWA_START_URL = '/'
+PWA_ROOT_URL = '/'
+PWA_APP_ICONS = [
+    {
+        'src': '/static/images/icon.png',
+        'sizes': '160x160'
+    }
+]
+PWA_APP_ICONS_APPLE = [
+    {
+        'src': '/static/images/icon.png',
+        'sizes': '160x160'
+    }
+]
+PWA_APP_LANG = 'en-UK'
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'serviceworker.js')
+
 # Set DEPLOY_SECURE to True only for LIVE deployment
-if docker_config.DEPLOY_SECURE:
+DEPLOY_SECURE = False
+
+if DEPLOY_SECURE:
     DEBUG = False
     TEMPLATES[0]["OPTIONS"]["debug"] = False
-    ALLOWED_HOSTS = ['josephbyrne.info', 'localhost',]
+    ALLOWED_HOSTS = ['www.josephbyrne.info', 'localhost',]
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
 else:

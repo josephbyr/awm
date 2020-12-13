@@ -25,5 +25,7 @@ urlpatterns = [
     path('signup/', views.signUp.as_view(), name='signup'),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('map/', TemplateView.as_view(template_name='map.html'), name='map'),
-    path('updatedb/', views.update_location, name='updatedb')
+    path('updatedb/', views.update_location, name='updatedb'),
+    path('', include('pwa.urls')),
+    path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline')
 ]

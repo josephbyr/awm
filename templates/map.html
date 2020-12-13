@@ -7,129 +7,155 @@
 {% block extra_header %}
     <style>
         #map {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 90vh;
+        }
+
+        .formBlock {
+            max-width: 300px;
+            background-color: #FFF;
+            border: 1px solid #ddd;
+            position: absolute;
+            top: 3vh;
+            left: 1.5vw;
+            padding: 10px;
+            z-index: 999;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .leaflet-top .leaflet-control {
+            margin-top: 180px;
+        }
+
+        .input {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ddd;
+            font-size: 15px;
+            border-radius: 3px;
+        }
+
+        #form {
+            padding: 0;
+            margin: 0;
+        }
+
+        input:nth-child(1) {
+            margin-bottom: 10px;
         }
     </style>
 {% endblock %}
 
 {% block body_content %}
-    {# <h3>Map</h3> #}
-    {# <div style="width: 100%"> #}
-    {% leaflet_map "map" callback="window.map_init_basic" %}
-    {#  </div> #}
+    <div id='map'></div>
+    <div class="formBlock">
+        <form id="form">
+            <input type="text" name="start" class="input" id="start" placeholder="Choose starting point" />
+            <input type="text" name="end" class="input" id="destination" placeholder="Choose starting point" />
+            <button style="display: none;" type="submit">Get Directions</button>
+        </form>
+    </div>
+
 {% endblock %}
 
 {% block extra_footer %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+    <script src="https://www.mapquestapi.com/sdk/leaflet/v2.2/mq-map.js?key=Eo3frgML2zAVKq4xGLdf7i4HLesScknM"></script>
+    <script src="https://www.mapquestapi.com/sdk/leaflet/v2.2/mq-routing.js?key=Eo3frgML2zAVKq4xGLdf7i4HLesScknM"></script>
     <script>
-        var HOST = location.protocol + "//" + location.host;
-        var locationMarker;
-        var circle;
-
-        $("#map").css({
-            "width": "100%",
-            "height": $(document).height() - ($("#header").height()
-                + $("#footer").height() + 45)
+        // default map layer
+        let map = L.map('map', {
+            layers: MQ.mapLayer(),
+            center: [53.3370115, -6.271264],
+            zoom: 12
         });
 
-        function map_init_basic(map, options) {
-            var pos;
-            map.setView([53.5, -8.5], 11);
-            updateLocation(map);
-            map.on('touchstart click dblclick ', function () {
-                updateLocation(map);
+
+        function runDirection(start, end) {
+
+            // recreating new map layer after removal
+            map = L.map('map', {
+                layers: MQ.mapLayer(),
+                center: [53.3370115, -6.271264],
+                zoom: 12
             });
-        }
-        function updateLocation(map) {
-            navigator.geolocation.getCurrentPosition(
-                function (pos) {
-                    setMapToCurrentLocation(map, pos);
-                    update_db(pos);
-                },
-                function (err) {
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 30000
-                }
-            );
-        }
 
-        function setMapToCurrentLocation(map, pos) {
-            console.log("In setMapToCurrentLocation.");
-            var myLatLon = L.latLng(pos.coords.latitude, pos.coords.longitude);
-            map.flyTo(myLatLon, 16);
-            if (locationMarker) {
-                map.removeLayer(locationMarker);
-            }
-            locationMarker = L.marker(myLatLon).addTo(map);
-            if (circle) {
-                map.removeLayer(circle);
-            }
-            circle = L.circle(myLatLon, {
-                color: 'blue',
-                fillColor: 'blue',
-                fillOpacity: 0.3,
-                radius: pos.coords.accuracy
-            }).addTo(map);
+            var dir = MQ.routing.directions();
 
-            $(".toast-body").html("Found location<br>Lat: " + myLatLon.lat + " Lon: " + myLatLon.lng);
-            $(".toast").toast('show');
-        }
-
-        function update_db(pos) {
-            var locString = pos.coords.longitude + ", " + pos.coords.latitude;
-
-            $.ajax({
-                type: "POST",
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                url: HOST + "/updatedb/",
-                data: {
-                    point: locString
-                }
-            }).done(function (data, status, xhr) {
-                console.log(data["message"])
-                var originalMsg = $(".toast-body").html();
-                $(".toast-body").html(originalMsg + "<br/>Updated database<br/>" + data["message"]);
-
-            }).fail(function (xhr, status, error) {
-               console.log(error);
-               var originalMsg = $(".toast-body").html();
-               $(".toast-body").html(originalMsg + "<br/>" + error);
-
-            }).always(function () {
-                console.log("find_loc_ed finished");
-                $(".toast").toast('show');
+            dir.route({
+                locations: [
+                    start,
+                    end
+                ]
             });
-        }
 
-        function getCookie(name) {
-            var cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = jQuery.trim(cookies[i]);
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+
+            CustomRouteLayer = MQ.Routing.RouteLayer.extend({
+                createStartMarker: (location) => {
+                    var custom_icon;
+                    var marker;
+
+                    custom_icon = L.icon({
+                        iconUrl: '/static/images/red.png',
+                        iconSize: [20, 29],
+                        iconAnchor: [10, 29],
+                        popupAnchor: [0, -29]
+                    });
+
+                    marker = L.marker(location.latLng, {icon: custom_icon}).addTo(map);
+
+                    return marker;
+                },
+
+                createEndMarker: (location) => {
+                    var custom_icon;
+                    var marker;
+
+                    custom_icon = L.icon({
+                        iconUrl: '/static/images/blue.png',
+                        iconSize: [20, 29],
+                        iconAnchor: [10, 29],
+                        popupAnchor: [0, -29]
+                    });
+
+                    marker = L.marker(location.latLng, {icon: custom_icon}).addTo(map);
+
+                    return marker;
                 }
-            }
-            return cookieValue;
+            });
+
+            map.addLayer(new CustomRouteLayer({
+                directions: dir,
+                fitBounds: true
+            }));
         }
 
-        var myIcon = L.icon({
-        iconUrl: '../static/leaflet/images/marker-icon.png',
-        iconSize: [38, 70],
-        iconAnchor: [20, 65],
-        popupAnchor: [-3, -50],
-        shadowUrl: '../static/leaflet/images/marker-shadow.png',
-        shadowSize: [68, 95],
-        shadowAnchor: [22, 94]
-        });
 
-        locationMarker = L.marker(myLatLon,{icon: myIcon}).addTo(map);
+        // function that runs when form submitted
+        function submitForm(event) {
+            event.preventDefault();
+
+            // delete current map layer
+            map.remove();
+
+            // getting form data
+            start = document.getElementById("start").value;
+            end = document.getElementById("destination").value;
+
+            // run directions function
+            runDirection(start, end);
+
+            // reset form
+            document.getElementById("form").reset();
+        }
+
+        // asign the form to form variable
+        const form = document.getElementById('form');
+
+        // call the submitForm() function when submitting the form
+        form.addEventListener('submit', submitForm);
+
     </script>
 {% endblock %}
